@@ -1,51 +1,65 @@
 #include "../statemachine/state_machine.h"
-#include <iostream>
-int i = 0;
-int j = 0;
-class TestStateMachine : public StateMachine {
- public:
-  TestStateMachine() : StateMachine("s1") {
-    State s1("s1", [&]() -> std::string {
-      std::cout << i++ << std::endl;
-      if (i > 100 + 10 * j) {
-        return "s2";
-      } else {
-        return "s1";
-      }
-    });
+#include "../statemachine/iterated_state_machine.h"
+#include "gtest/gtest.h"
 
-    State s2("s2", [&j]() { j = 0; },
-             [i, &j]() -> std::string {
-               j++;
-               if (j < 10) {
-                 return "";
-               } else if (i < 300) {
-                 return "s1";
-               } else {
-                 return "s3";
-               }
-             });
+enum States : unsigned int { One, Two, Three };
 
-    State s3("s3", [i]() { std::cout << "Done" << std::endl; },
-             [i]() -> std::string {
-               if (i == 300) {
-                 exit(0);
-               } else {
-                 exit(1);
-               }
-             });
+TEST(StateMachineTest, Transitions) {
+        auto tsm = FiniteStateMachine<int>(States::One);
+        bool called = false;
+        tsm.addEdge(States::One, States::Two,
+                    [&](FiniteStateMachineEdge edge) { called = true; });
+        tsm.transitionToVertex(States::Two);
+        ASSERT_EQ(tsm.getCurrentVertex(), States::Two);
+        ASSERT_TRUE(called);
+}
 
-    AddState(s1);
-    AddState(s2);
-    AddState(s3);
-  }
-};
+TEST(StateMachineTest, DoesNotTakeDisabledTransitions) {
+        auto tsm = FiniteStateMachine<int>(States::One);
+        tsm.transitionToVertex(States::Two);
+        ASSERT_EQ(tsm.getCurrentVertex(), States::One);
+}
 
-int main() {
-  TestStateMachine tsm;
-  tsm.Start();
-  for (int k = 0; k < 10000; k++) {
-    tsm.Update();
-    // std::cout << "Doing things" << std::endl;
-  }
+TEST(IteratedStateMachineTest, CallsUpdateFunc) {
+        auto tsm = IteratedFiniteStateMachine(States::One);
+        int i = 300;
+        tsm.SetVertexData(States::One, [&i](FiniteStateMachineVertexID v) {
+                i--;
+                return States::One;
+        });
+        for (int j = 0; j < 300; j++) {
+                tsm.update();
+        }
+        ASSERT_EQ(i, 0);
+}
+
+TEST(IteratedStateMachineTest, TransitionsFromUpdate) {
+        auto tsm = IteratedFiniteStateMachine(States::One);
+        int i = 0;
+        tsm.addEdge(States::One, States::Two);
+        tsm.SetVertexData(States::One, [&i](FiniteStateMachineVertexID v) {
+                if (i++ < 10) {
+                        return States::One;
+                } else {
+                        return States::Two;
+                }
+        });
+        for (int j = 0; j < 20; j++) {
+                tsm.update();
+        }
+        ASSERT_EQ(tsm.getCurrentVertex(), States::Two);
+}
+
+TEST(StateMachineTest, CallsInitAndDeinit) {
+        auto tsm = IteratedFiniteStateMachine(States::One);
+        bool did_init = false, did_deinit = false;
+        tsm.addInitFunction(States::One, [&did_init]() { did_init = true; });
+        tsm.addDeinitFunction(States::One,
+                              [&did_deinit]() { did_deinit = true; });
+        tsm.addEdge(States::One, States::One);
+        tsm.addEdge(States::One, States::Two);
+        tsm.transitionToVertex(States::One);
+        tsm.transitionToVertex(States::Two);
+        ASSERT_TRUE(did_init);
+        ASSERT_TRUE(did_deinit);
 }
