@@ -18,162 +18,187 @@ typedef int FiniteStateMachineVertexID;
 typedef int FiniteStateMachineEdgeID;
 
 struct FiniteStateMachineEdge {
-  FiniteStateMachineVertexID fromVertexID;
-  FiniteStateMachineVertexID toVertexID;
-  FiniteStateMachineEdgeID edgeID;
+        FiniteStateMachineVertexID from_vertex_id;
+        FiniteStateMachineVertexID to_vertex_id;
+        FiniteStateMachineEdgeID edge_id;
 };
 
 template <typename VertexData>
 class FiniteStateMachine {
- public:
-  FiniteStateMachine(FiniteStateMachineVertexID initialVertex) : currentVertex(initialVertex) {}
+       public:
+        FiniteStateMachine(FiniteStateMachineVertexID initial_vertex)
+            : current_vertex_(initial_vertex) {}
 
-  void SetVertexData(FiniteStateMachineVertexID i, VertexData d) { vertexData[i] = d; }
+        void SetVertexData(FiniteStateMachineVertexID i, VertexData d) {
+                vertex_data[i] = d;
+        }
 
-  FiniteStateMachineVertexID getCurrentVertex() const { return currentVertex; }
+        FiniteStateMachineVertexID GetCurrentVertex() const {
+                return current_vertex_;
+        }
 
-  VertexData *getCurrentVertexData() {
-    typename std::map<FiniteStateMachineVertexID, VertexData>::iterator it = vertexData.find(currentVertex);
-    if (it == vertexData.end()) {
-      return nullptr;
-    }
+        VertexData *GetCurrentVertexData() {
+                typename std::map<FiniteStateMachineVertexID,
+                                  VertexData>::iterator it =
+                    vertex_data.find(current_vertex_);
+                if (it == vertex_data.end()) {
+                        return nullptr;
+                }
 
-    return &(it->second);
-  }
+                return &(it->second);
+        }
 
-  void fullyConnect(const std::vector<FiniteStateMachineVertexID> &vertices) { fullyConnect(vertices, NULL); }
+        void FullyConnect(
+            const std::vector<FiniteStateMachineVertexID> &vertices) {
+                FullyConnect(vertices, NULL);
+        }
 
-  void fullyConnect(const std::vector<FiniteStateMachineVertexID> &vertices,
-                    std::function<void(FiniteStateMachineEdge)> callback) {
-    for (std::vector<FiniteStateMachineVertexID>::const_iterator it = vertices.begin(); it != vertices.end(); it++) {
-      FiniteStateMachineVertexID vertex1 = *it;
-      for (std::vector<FiniteStateMachineVertexID>::const_iterator it2 = it + 1; it2 != vertices.end(); it2++) {
-        addEdge(vertex1, *it2, callback);
-        addEdge(*it2, vertex1, callback);
-      }
-    }
-  }
+        void FullyConnect(
+            const std::vector<FiniteStateMachineVertexID> &vertices,
+            std::function<void(FiniteStateMachineEdge)> callback) {
+                for (std::vector<FiniteStateMachineVertexID>::const_iterator
+                         it = vertices.begin();
+                     it != vertices.end(); it++) {
+                        FiniteStateMachineVertexID vertex1 = *it;
+                        for (std::vector<FiniteStateMachineVertexID>::
+                                 const_iterator it2 = it + 1;
+                             it2 != vertices.end(); it2++) {
+                                AddEdge(vertex1, *it2, callback);
+                                AddEdge(*it2, vertex1, callback);
+                        }
+                }
+        }
 
-  void addEdge(FiniteStateMachineVertexID from, FiniteStateMachineVertexID to) {
-    addEdge(from, to, automaticUniqueEdgeID, NULL);
-    automaticUniqueEdgeID--;
-  }
+        void AddEdge(FiniteStateMachineVertexID from,
+                     FiniteStateMachineVertexID to) {
+                AddEdge(from, to, unique_edge_id_counter_, NULL);
+                unique_edge_id_counter_--;
+        }
 
-  // The edge ID must be 0 or positive.
-  void addEdge(FiniteStateMachineVertexID from, FiniteStateMachineVertexID to, FiniteStateMachineEdgeID edgeID) {
-    addEdge(from, to, edgeID, NULL);
-  }
+        // The edge ID must be 0 or positive.
+        void AddEdge(FiniteStateMachineVertexID from,
+                     FiniteStateMachineVertexID to,
+                     FiniteStateMachineEdgeID edge_id) {
+                AddEdge(from, to, edge_id, NULL);
+        }
 
-  void addEdge(FiniteStateMachineVertexID from, FiniteStateMachineVertexID to,
-               std::function<void(FiniteStateMachineEdge)> callback) {
-    addEdge(from, to, automaticUniqueEdgeID, callback);
-    automaticUniqueEdgeID--;
-  }
+        void AddEdge(FiniteStateMachineVertexID from,
+                     FiniteStateMachineVertexID to,
+                     std::function<void(FiniteStateMachineEdge)> callback) {
+                AddEdge(from, to, unique_edge_id_counter_, callback);
+                unique_edge_id_counter_--;
+        }
 
-  // The edge ID must be 0 or positive.
-  void addEdge(FiniteStateMachineVertexID from, FiniteStateMachineVertexID to, FiniteStateMachineEdgeID edgeID,
-               std::function<void(FiniteStateMachineEdge)> callback) {
-    FiniteStateMachineEdge edge;
-    edge.fromVertexID = from;
-    edge.toVertexID = to;
-    edge.edgeID = edgeID;
+        // The edge ID must be 0 or positive.
+        void AddEdge(FiniteStateMachineVertexID from,
+                     FiniteStateMachineVertexID to,
+                     FiniteStateMachineEdgeID edge_id,
+                     std::function<void(FiniteStateMachineEdge)> callback) {
+                FiniteStateMachineEdge edge;
+                edge.from_vertex_id = from;
+                edge.to_vertex_id = to;
+                edge.edge_id = edge_id;
 
-    directedAdjacencyListByVertexID[from].push_back(edge);
-    directedAdjacencyListByEdgeID[edgeID] = edge;
-    callbackFunctions[edgeID] = callback;
-  }
+                adjacency_list_by_vertex_id_[from].push_back(edge);
+                adjacency_list_by_edge_id_[edge_id] = edge;
+                callback_functions_[edge_id] = callback;
+        }
 
-  bool edgeWhichTransitionsToVertex(FiniteStateMachineVertexID destinationVertexID,
-                                    FiniteStateMachineEdge *maybeEdge) const {
-    std::map<FiniteStateMachineVertexID, std::vector<FiniteStateMachineEdge>>::const_iterator it =
-        directedAdjacencyListByVertexID.find(currentVertex);
-    if (it == directedAdjacencyListByVertexID.end()) {
-      return false;
-    }
+        bool EdgeWhichTransitionsToVertex(
+            FiniteStateMachineVertexID destination_vertex_id,
+            FiniteStateMachineEdge *maybeEdge) const {
+                std::map<FiniteStateMachineVertexID,
+                         std::vector<FiniteStateMachineEdge>>::const_iterator
+                    it = adjacency_list_by_vertex_id_.find(current_vertex_);
+                if (it == adjacency_list_by_vertex_id_.end()) {
+                        return false;
+                }
 
-    const std::vector<FiniteStateMachineEdge> &edges = it->second;
+                const std::vector<FiniteStateMachineEdge> &edges = it->second;
 
-    // Search for an edge that leads to our destination
-    for (std::vector<FiniteStateMachineEdge>::const_iterator it = edges.begin(); it != edges.end(); it++) {
-      if (it->toVertexID == destinationVertexID) {
-        *maybeEdge = *it;
-        return true;
-      }
-    }
+                // Search for an edge that leads to our destination
+                for (std::vector<FiniteStateMachineEdge>::const_iterator it =
+                         edges.begin();
+                     it != edges.end(); it++) {
+                        if (it->to_vertex_id == destination_vertex_id) {
+                                *maybeEdge = *it;
+                                return true;
+                        }
+                }
 
-    return false;
-  }
+                return false;
+        }
 
-  virtual bool transitionToVertex(FiniteStateMachineVertexID destinationVertexID) {
-    // TODO(Kyle) This prevents self-edges and might need to go.
-    // if (destinationVertexID == currentVertex) {
-    //   return false;
-    // }
+        virtual bool TransitionToVertex(
+            FiniteStateMachineVertexID destination_vertex_id) {
+                // TODO(Kyle) This prevents self-edges - is it really a good
+                // thing? As the system is currently, this is the only thing
+                // preventing an IteratedFiniteStateMachine from resetting every
+                // time. However, it seems like that could be better dealt with,
+                // as there are some situations where you might want to reset
+                // the current state, and those are different from staying on
+                // the same state.
+                if (destination_vertex_id == current_vertex_) {
+                        return false;
+                }
 
-    FiniteStateMachineEdge edge;
-    if (edgeWhichTransitionsToVertex(destinationVertexID, &edge)) {
-      completeEdgeTransition(edge);
-      return true;
-    }
-    return false;
-  }
+                FiniteStateMachineEdge edge;
+                if (EdgeWhichTransitionsToVertex(destination_vertex_id,
+                                                 &edge)) {
+                        CompleteEdgeTransition(edge);
+                        return true;
+                }
+                return false;
+        }
 
-  bool canTransitionUsingEdge(FiniteStateMachineEdgeID edgeID) const {
-    std::map<FiniteStateMachineEdgeID, FiniteStateMachineEdge>::const_iterator it =
-        directedAdjacencyListByEdgeID.find(edgeID);
-    if (it == directedAdjacencyListByEdgeID.end()) {
-      return false;
-    }
+        bool CanTransitionUsingEdge(FiniteStateMachineEdgeID edge_id) const {
+                std::map<FiniteStateMachineEdgeID,
+                         FiniteStateMachineEdge>::const_iterator it =
+                    adjacency_list_by_edge_id_.find(edge_id);
+                if (it == adjacency_list_by_edge_id_.end()) {
+                        return false;
+                }
 
-    FiniteStateMachineEdge possibleEdge = it->second;
-    if (possibleEdge.fromVertexID == currentVertex) {
-      return true;
-    }
-    return false;
-  }
+                FiniteStateMachineEdge possibleEdge = it->second;
+                if (possibleEdge.from_vertex_id == current_vertex_) {
+                        return true;
+                }
+                return false;
+        }
 
-  bool transitionUsingEdge(FiniteStateMachineEdgeID edgeID) {
-    FiniteStateMachineEdge possibleEdge = directedAdjacencyListByEdgeID[edgeID];
-    if (possibleEdge.fromVertexID == currentVertex) {
-      completeEdgeTransition(possibleEdge);
-      return true;
-    }
-    return false;
-  }
+        bool TransitionUsingEdge(FiniteStateMachineEdgeID edge_id) {
+                FiniteStateMachineEdge possibleEdge =
+                    adjacency_list_by_edge_id_[edge_id];
+                if (possibleEdge.from_vertex_id == current_vertex_) {
+                        CompleteEdgeTransition(possibleEdge);
+                        return true;
+                }
+                return false;
+        }
 
-  void addInitFunction(FiniteStateMachineVertexID id, std::function<void()> init) { init_functions_[id] = init; }
+       protected:
+        FiniteStateMachineVertexID current_vertex_;
+        FiniteStateMachineEdgeID unique_edge_id_counter_ = -1;
+        std::map<FiniteStateMachineVertexID,
+                 std::vector<FiniteStateMachineEdge>>
+            adjacency_list_by_vertex_id_;
+        std::map<FiniteStateMachineEdgeID, FiniteStateMachineEdge>
+            adjacency_list_by_edge_id_;
+        std::map<FiniteStateMachineVertexID, VertexData> vertex_data;
 
-  void addDeinitFunction(FiniteStateMachineVertexID id, std::function<void()> deinit) { deinit_functions_[id] = deinit; }
+        std::map<FiniteStateMachineEdgeID,
+                 std::function<void(FiniteStateMachineEdge)>>
+            callback_functions_;
 
- private:
-  FiniteStateMachineVertexID currentVertex;
-  FiniteStateMachineEdgeID automaticUniqueEdgeID = -1;
-  std::map<FiniteStateMachineVertexID, std::vector<FiniteStateMachineEdge>> directedAdjacencyListByVertexID;
-  std::map<FiniteStateMachineEdgeID, FiniteStateMachineEdge> directedAdjacencyListByEdgeID;
-  std::map<FiniteStateMachineVertexID, VertexData> vertexData;
+        void CompleteEdgeTransition(FiniteStateMachineEdge edge) {
+                auto edge_it = callback_functions_.find(edge.edge_id);
+                if (edge_it != callback_functions_.end() &&
+                    edge_it->second != NULL) {
+                        (edge_it->second)(edge);
+                }
 
-  std::map<FiniteStateMachineEdgeID, std::function<void(FiniteStateMachineEdge)>> callbackFunctions;
-
-  void completeEdgeTransition(FiniteStateMachineEdge edge) {
-    auto deinit_it = deinit_functions_.find(edge.fromVertexID);
-    if (deinit_it != deinit_functions_.end()) {
-      (deinit_it->second)();
-    }
-
-    auto edge_it = callbackFunctions.find(edge.edgeID);
-    if (edge_it != callbackFunctions.end() && edge_it->second != NULL) {
-      (edge_it->second)(edge);
-    }
-
-    auto init_it = init_functions_.find(edge.toVertexID);
-    if (init_it != init_functions_.end()) {
-      (init_it->second)();
-    }
-
-    currentVertex = edge.toVertexID;
-  }
-
-  std::map<FiniteStateMachineVertexID, std::function<void()>> init_functions_, deinit_functions_;
+                current_vertex_ = edge.to_vertex_id;
+        }
 };
 
 #endif /* FiniteStateMachine_h */
