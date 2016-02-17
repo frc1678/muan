@@ -43,15 +43,15 @@ class PidController {
   }
 
  private:
-  InputType last_proportional_;
-  Units<InputType::u1, InputType::u2 + 1, InputType::u3, InputType::u4>
-      integral_;
   Units<OutputType::u1 - InputType::u1, OutputType::u2 - InputType::u2,
         OutputType::u3 - InputType::u3, OutputType::u4 - InputType::u4> kP;
   Units<OutputType::u1 - InputType::u1, OutputType::u2 - InputType::u2 - 1,
         OutputType::u3 - InputType::u3, OutputType::u4 - InputType::u4> kI;
   Units<OutputType::u1 - InputType::u1, OutputType::u2 - InputType::u2 + 1,
         OutputType::u3 - InputType::u3, OutputType::u4 - InputType::u4> kD;
+  Units<InputType::u1, InputType::u2 + 1, InputType::u3, InputType::u4>
+      integral_;
+  InputType last_proportional_;
 };
 }
 
