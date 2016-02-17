@@ -69,7 +69,8 @@ std::string CSVLog::GetExtension() const { return "csv"; }
 /**
  * Save the log to the disk.
  */
-void CSVLog::WriteToLog(std::string log, std::string key, std::string value) {
+void CSVLog::WriteToLog(std::string /*log*/, std::string key,
+                        std::string value) {
   reinterpret_cast<CSVLog *>(LogManager::GetInstance()->GetLog(key))
       ->Write(key, value);
 }

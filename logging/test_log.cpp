@@ -13,7 +13,7 @@
 
 namespace muan {
 
-TestLog::TestLog(std::string filename, std::vector<std::string> keys)
+TestLog::TestLog(std::string filename, std::vector<std::string> /*keys*/)
     : Log(filename, GetExtension()) {
   if (file_.is_open()) file_.close();
   folder_path_ = "./logs/tests/";
@@ -63,7 +63,8 @@ std::string TestLog::GetExtension() const { return "csv"; }
 /**
  * Save the log to the disk.
  */
-void TestLog::WriteToLog(std::string log, std::string key, std::string value) {
+void TestLog::WriteToLog(std::string /*log*/, std::string key,
+                         std::string value) {
   reinterpret_cast<TestLog *>(LogManager::GetInstance()->GetLog(key))
       ->Write(key, value);
 }
