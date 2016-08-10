@@ -57,7 +57,7 @@ class TrapezoidalMotionProfile : public MotionProfile<DistanceU> {
       DistanceU accel_dist = distance / 2;
 
       _accel_time = std::sqrt((2 * accel_dist / max_acceleration)()) * s;
-      _deccel_time = std::sqrt((2 * deccel_dist / max_decceleration)()) * s;
+      _deccel_time = std::sqrt((2 * accel_dist / max_decceleration)()) * s;
       _max_speed = _accel_time * _max_acceleration;
       _total_time = _accel_time + _deccel_time;
     }
